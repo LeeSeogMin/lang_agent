@@ -1,5 +1,7 @@
 """
 Streamlit 기반 웹 인터페이스
+이 모듈은 AI 검색 에이전트의 웹 사용자 인터페이스를 구현합니다.
+Streamlit을 사용하여 직관적이고 반응형인 UI를 제공합니다.
 """
 import streamlit as st
 from pathlib import Path
@@ -10,7 +12,7 @@ import sys
 import os
 from threading import Lock
 
-# Add the project root directory to Python path
+# 프로젝트 루트 디렉토리를 Python 경로에 추가
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from src.ai_agent.agents.controller_agent import ControllerAgent
@@ -19,16 +21,28 @@ from src.ai_agent.models.state import SearchResult, DocumentMetadata
 
 @st.cache_resource
 def get_controller():
-    """컨트롤러 에이전트 인스턴스 반환"""
+    """
+    컨트롤러 에이전트 인스턴스를 반환합니다.
+    Streamlit의 캐시 기능을 사용하여 인스턴스를 재사용합니다.
+    """
     return ControllerAgent()
 
 @st.cache_resource
 def get_document_manager():
-    """문서 관리자 인스턴스 반환"""
+    """
+    문서 관리자 인스턴스를 반환합니다.
+    Streamlit의 캐시 기능을 사용하여 인스턴스를 재사용합니다.
+    """
     return DocumentManager()
 
 class WebUI:
     def __init__(self):
+        """
+        웹 UI 클래스 초기화
+        - 컨트롤러와 문서 관리자 인스턴스 생성
+        - 세션 상태 초기화
+        - 문서 처리용 락 생성
+        """
         self.controller = get_controller()
         self.document_manager = get_document_manager()
         self.processing_lock = Lock()  # 문서 처리를 위한 락 추가
@@ -51,7 +65,10 @@ class WebUI:
             st.session_state["upload_error"] = None
     
     def render_header(self):
-        """헤더 섹션 렌더링"""
+        """
+        헤더 섹션을 렌더링합니다.
+        애플리케이션의 제목과 주요 기능을 설명합니다.
+        """
         st.title("🤖 AI 검색 에이전트")
         st.markdown("""
         웹 검색과 문서 검색을 결합한 하이브리드 검색 시스템입니다.
@@ -61,7 +78,20 @@ class WebUI:
         """)
     
     def process_document(self, file_path: str, file_name: str):
-        """문서 처리 및 인덱싱"""
+        """
+        문서를 처리하고 인덱싱합니다.
+        
+        Args:
+            file_path (str): 처리할 파일의 경로
+            file_name (str): 원본 파일명
+        
+        처리 과정:
+        1. 중복 문서 확인 및 삭제
+        2. 문서 업로드
+        3. 문서 인덱싱
+        4. 상태 업데이트
+        5. 임시 파일 정리
+        """
         with self.processing_lock:  # 락을 사용하여 동시 처리 방지
             try:
                 # 진행 상태 로깅

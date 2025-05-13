@@ -1,5 +1,7 @@
 """
 문서 관리 및 인덱싱 기능
+이 모듈은 문서의 업로드, 저장, 인덱싱, 삭제를 관리합니다.
+벡터 저장소를 활용한 문서 검색 기능을 제공합니다.
 """
 from typing import Dict, List, Optional, Any
 import os
@@ -26,6 +28,13 @@ class DocumentManager:
         storage_dir: Path = DOCUMENTS_DIR,
         chunk_size: int = 1000
     ):
+        """
+        문서 관리자 초기화
+        
+        Args:
+            storage_dir (Path): 문서 저장 디렉토리
+            chunk_size (int): 문서 청크 크기
+        """
         self.storage_dir = storage_dir
         self.chunk_size = chunk_size
         self.metadata_file = storage_dir / "metadata.json"
@@ -47,7 +56,10 @@ class DocumentManager:
         self._load_metadata()
     
     def _load_metadata(self):
-        """메타데이터 파일 로드"""
+        """
+        메타데이터 파일 로드
+        JSON 파일에서 문서 메타데이터를 로드하여 메모리에 저장합니다.
+        """
         if self.metadata_file.exists():
             logger.info(f"메타데이터 파일 로드: {self.metadata_file}")
             with open(self.metadata_file, 'r', encoding='utf-8') as f:
@@ -59,7 +71,10 @@ class DocumentManager:
             logger.info(f"메타데이터 로드 완료: {len(self.document_metadata)}개 문서")
     
     def _save_metadata(self):
-        """메타데이터 파일 저장"""
+        """
+        메타데이터 파일 저장
+        현재 메모리에 있는 문서 메타데이터를 JSON 파일로 저장합니다.
+        """
         logger.info(f"메타데이터 저장: {self.metadata_file}")
         with open(self.metadata_file, 'w', encoding='utf-8') as f:
             data = {
@@ -74,7 +89,19 @@ class DocumentManager:
         file_path: str,
         custom_metadata: Optional[Dict[str, Any]] = None
     ) -> str:
-        """문서 업로드 및 저장"""
+        """
+        문서 업로드 및 저장
+        
+        Args:
+            file_path (str): 업로드할 파일 경로
+            custom_metadata (Optional[Dict[str, Any]]): 추가 메타데이터
+            
+        Returns:
+            str: 생성된 문서 ID
+            
+        Raises:
+            ValueError: 지원하지 않는 파일 형식인 경우
+        """
         logger.info(f"문서 업로드 시작: {file_path}")
         
         # 파일 확장자 확인
@@ -108,7 +135,18 @@ class DocumentManager:
         return doc_id
     
     def index_document(self, doc_id: str) -> int:
-        """문서를 벡터 저장소에 인덱싱"""
+        """
+        문서를 벡터 저장소에 인덱싱
+        
+        Args:
+            doc_id (str): 인덱싱할 문서 ID
+            
+        Returns:
+            int: 인덱싱된 청크 수
+            
+        Raises:
+            ValueError: 문서를 찾을 수 없는 경우
+        """
         logger.info(f"문서 인덱싱 시작: {doc_id}")
         
         metadata = self.document_metadata.get(doc_id)
@@ -182,7 +220,15 @@ class DocumentManager:
             raise
     
     def delete_document(self, doc_id: str) -> bool:
-        """문서 삭제"""
+        """
+        문서 삭제
+        
+        Args:
+            doc_id (str): 삭제할 문서 ID
+            
+        Returns:
+            bool: 삭제 성공 여부
+        """
         logger.info(f"문서 삭제 시작: {doc_id}")
         
         metadata = self.document_metadata.get(doc_id)
@@ -206,23 +252,59 @@ class DocumentManager:
         return True
     
     def get_document_metadata(self, doc_id: str) -> Optional[DocumentMetadata]:
-        """문서 메타데이터 조회"""
+        """
+        문서 메타데이터 조회
+        
+        Args:
+            doc_id (str): 조회할 문서 ID
+            
+        Returns:
+            Optional[DocumentMetadata]: 문서 메타데이터 또는 None
+        """
         return self.document_metadata.get(doc_id)
     
     def list_documents(self) -> Dict[str, DocumentMetadata]:
-        """모든 문서 메타데이터 조회"""
+        """
+        모든 문서 메타데이터 조회
+        
+        Returns:
+            Dict[str, DocumentMetadata]: 문서 ID를 키로 하는 메타데이터 딕셔너리
+        """
         return self.document_metadata.copy()
     
     def save_state(self):
-        """전체 상태 저장"""
-        logger.info("전체 상태 저장 시작")
+        """
+        현재 상태 저장
+        메타데이터와 벡터 저장소의 상태를 저장합니다.
+        """
         self._save_metadata()
         self.vector_store.save()
-        logger.info("전체 상태 저장 완료")
     
     def load_state(self):
-        """전체 상태 로드"""
-        logger.info("전체 상태 로드 시작")
+        """
+        저장된 상태 로드
+        메타데이터와 벡터 저장소의 상태를 로드합니다.
+        """
         self._load_metadata()
         self.vector_store.load()
-        logger.info("전체 상태 로드 완료") 
+
+"""
+이 파일의 주요 역할:
+1. 문서 관리 시스템 구현
+2. 문서 업로드 및 저장
+3. 문서 인덱싱 및 벡터화
+4. 메타데이터 관리
+
+주요 기능:
+- 문서 업로드 및 저장
+- 문서 파싱 및 청크 분할
+- 임베딩 생성
+- 벡터 저장소 관리
+- 메타데이터 관리
+
+사용된 주요 기술:
+- UUID 기반 문서 식별
+- 벡터 임베딩
+- 메모리 관리 (GC)
+- 로깅 시스템
+""" 

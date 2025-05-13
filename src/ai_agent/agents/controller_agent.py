@@ -1,5 +1,8 @@
 """
 컨트롤러 에이전트 구현
+이 모듈은 AI 검색 에이전트의 중앙 제어 시스템을 구현합니다.
+웹 검색과 RAG(Retrieval Augmented Generation) 검색을 조율하고,
+검색 결과를 통합하여 최종 응답을 생성합니다.
 """
 from typing import Dict, List, Any, Optional
 import os
@@ -19,6 +22,13 @@ class ControllerAgent:
         web_search_agent: Optional[WebSearchAgent] = None,
         rag_agent: Optional[RAGAgent] = None
     ):
+        """
+        컨트롤러 에이전트 초기화
+        
+        Args:
+            web_search_agent: 웹 검색 에이전트 인스턴스 (선택적)
+            rag_agent: RAG 에이전트 인스턴스 (선택적)
+        """
         self.web_search_agent = web_search_agent or WebSearchAgent()
         self.rag_agent = rag_agent or RAGAgent()
         self.cache_manager = CacheManager()
@@ -30,7 +40,19 @@ class ControllerAgent:
         self.openai_client = OpenAI(api_key=openai_api_key)
     
     def analyze_query(self, query: str) -> Dict[str, Any]:
-        """쿼리 분석 및 실행 계획 수립"""
+        """
+        쿼리를 분석하고 실행 계획을 수립합니다.
+        
+        Args:
+            query (str): 사용자 검색 쿼리
+            
+        Returns:
+            Dict[str, Any]: 쿼리 분석 결과
+                - requires_web_search: 웹 검색 필요 여부
+                - requires_rag: RAG 검색 필요 여부
+                - search_type: 검색 유형 (web/scholar/combined)
+                - priority: 각 검색 방식의 가중치
+        """
         # 캐시 확인
         cache_key = f"query_analysis_{query}"
         cached_result = self.cache_manager.get(cache_key)
@@ -66,7 +88,18 @@ class ControllerAgent:
         query: str,
         num_results: int = 5
     ) -> Dict[str, Any]:
-        """검색 실행 및 결과 통합"""
+        """
+        검색을 실행하고 결과를 통합합니다.
+        
+        Args:
+            query (str): 검색 쿼리
+            num_results (int): 각 검색 방식별 결과 수
+            
+        Returns:
+            Dict[str, Any]: 통합된 검색 결과
+                - web_results: 웹 검색 결과
+                - rag_results: RAG 검색 결과
+        """
         # 쿼리 분석
         analysis = self.analyze_query(query)
         
@@ -112,7 +145,16 @@ class ControllerAgent:
         results: Dict[str, Any],
         analysis: Dict[str, Any]
     ) -> List[SearchResult]:
-        """검색 결과 순위 지정"""
+        """
+        검색 결과에 가중치를 적용하고 순위를 매깁니다.
+        
+        Args:
+            results (Dict[str, Any]): 검색 결과
+            analysis (Dict[str, Any]): 쿼리 분석 결과
+            
+        Returns:
+            List[SearchResult]: 순위가 매겨진 검색 결과 목록
+        """
         ranked_results = []
         
         # 웹 검색 결과 가중치 적용
@@ -131,7 +173,19 @@ class ControllerAgent:
         return ranked_results
     
     def summarize_search_results(self, query: str, results: List[SearchResult]) -> Dict[str, Any]:
-        """검색 결과를 종합적으로 분석하고 요약"""
+        """
+        검색 결과를 종합적으로 분석하고 요약합니다.
+        
+        Args:
+            query (str): 원본 검색 쿼리
+            results (List[SearchResult]): 검색 결과 목록
+            
+        Returns:
+            Dict[str, Any]: 요약 결과
+                - summary: AI가 생성한 요약
+                - result_count: 결과 수
+                - sources: 출처 목록
+        """
         try:
             # 검색 결과 텍스트 구성
             result_texts = []
@@ -147,42 +201,38 @@ class ControllerAgent:
 {combined_results}
 
 요약 형식:
-1. 핵심 주제: 검색 결과들의 중심 주제와 핵심 내용을 한 문단으로 설명
-2. 주요 발견:
-   - 가장 중요한 발견점들을 bullet point로 정리
-   - 상반된 의견이나 다양한 관점이 있다면 이를 포함
-3. 시간적 맥락: 기술/연구의 발전 과정이나 시간순 정리 (해당되는 경우)
-4. 한계 및 과제: 현재 한계점이나 향후 과제 (언급된 경우)
-5. 실용적 시사점: 실제 적용이나 활용 방안
+1. 핵심 내용 요약
+2. 주요 발견점
+3. 출처별 특징
+4. 추가 조사가 필요한 부분
 
-전문가의 관점에서 객관적으로 분석하되, 한국어로 명확하게 작성해주세요."""
+답변은 한국어로 작성해주세요."""
 
-            # GPT로 요약 생성
+            # GPT API 호출
             response = self.openai_client.chat.completions.create(
-                model="gpt-4-turbo-preview",  # 또는 사용 가능한 최신 모델
+                model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "당신은 연구 및 기술 문헌을 분석하고 종합하는 전문가입니다."},
+                    {"role": "system", "content": "당신은 검색 결과를 분석하고 요약하는 전문가입니다."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.3,
-                max_tokens=1500
+                temperature=0.7,
+                max_tokens=1000
             )
             
             summary = response.choices[0].message.content
             
             return {
-                "query": query,
                 "summary": summary,
                 "result_count": len(results),
-                "sources": list(set(r.source for r in results))
+                "sources": list(set(result.source for result in results))
             }
             
         except Exception as e:
             print(f"요약 생성 중 오류 발생: {str(e)}")
             return {
-                "query": query,
-                "summary": "요약을 생성할 수 없습니다.",
-                "error": str(e)
+                "summary": "요약을 생성하는 중 오류가 발생했습니다.",
+                "result_count": len(results),
+                "sources": list(set(result.source for result in results))
             }
     
     def process_query(
@@ -190,49 +240,57 @@ class ControllerAgent:
         query: str,
         num_results: int = 5
     ) -> SystemState:
-        """쿼리 처리 및 시스템 상태 반환"""
+        """
+        사용자 쿼리를 처리하고 검색 결과를 반환합니다.
+        
+        Args:
+            query (str): 사용자 검색 쿼리
+            num_results (int): 반환할 결과 수
+            
+        Returns:
+            SystemState: 시스템 상태 객체
+        """
         try:
             # 쿼리 분석
             analysis = self.analyze_query(query)
             
             # 검색 실행
-            search_results = self.execute_search(query, num_results)
+            results = self.execute_search(query, num_results)
             
-            # 결과 순위 지정
-            ranked_results = self.rank_results(search_results, analysis)
+            # 결과 순위 매기기
+            ranked_results = self.rank_results(results, analysis)
             
-            # 결과가 없으면 빈 결과 반환 대신 기본 메시지 추가
-            if not ranked_results:
-                default_result = SearchResult(
-                    title="검색 결과 없음",
-                    snippet="문서를 업로드하고 다시 검색해보세요. 트랜스포머, 시계열과 같은 키워드로 검색하면 결과를 볼 수 있습니다.",
-                    source="system",
-                    score=1.0
-                )
-                ranked_results = [default_result]
+            # 결과 요약
+            summary = self.summarize_search_results(query, ranked_results)
             
-            # 상위 결과만 선택
-            top_results = ranked_results[:num_results]
-            
-            # 검색 결과 요약 생성
-            summary = self.summarize_search_results(query, top_results)
-            
-            # 시스템 상태 생성
-            state = SystemState(
+            # 시스템 상태 반환
+            return SystemState(
                 query=query,
-                search_results=top_results,
-                current_agent="controller",
+                search_results=ranked_results,
                 summary=summary
             )
             
-            return state
-            
         except Exception as e:
             print(f"쿼리 처리 중 오류 발생: {str(e)}")
-            # 오류 발생 시 기본 상태 반환
             return SystemState(
                 query=query,
-                search_results=[],
-                current_agent="controller",
-                summary={"error": str(e)}
-            ) 
+                error=str(e)
+            )
+
+"""
+이 파일의 주요 역할:
+1. 검색 에이전트 중앙 제어
+2. 검색 결과 통합 및 순위 매기기
+3. 검색 결과 요약
+
+주요 기능:
+- 쿼리 분석
+- 웹/RAG 검색 조율
+- 결과 순위 매기기
+- AI 기반 요약
+
+사용된 주요 기술:
+- OpenAI GPT
+- 캐싱 시스템
+- 가중치 기반 순위 매기기
+""" 

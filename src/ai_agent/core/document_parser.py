@@ -1,5 +1,7 @@
 """
 다양한 형식의 문서를 파싱하는 기능
+이 모듈은 PDF, TXT, DOCX 등 다양한 형식의 문서를 파싱하고 청크로 분할합니다.
+OCR 기능을 포함하여 스캔된 PDF도 처리할 수 있습니다.
 """
 from typing import List, Generator
 import os
@@ -18,7 +20,19 @@ logger = logging.getLogger(__name__)
 
 class DocumentParser:
     def parse(self, file_path: str, chunk_size: int = 1000) -> List[str]:
-        """파일 형식에 따라 적절한 파서를 선택하여 문서를 파싱"""
+        """
+        파일 형식에 따라 적절한 파서를 선택하여 문서를 파싱
+        
+        Args:
+            file_path (str): 파싱할 파일 경로
+            chunk_size (int): 청크 크기
+            
+        Returns:
+            List[str]: 파싱된 텍스트 청크 리스트
+            
+        Raises:
+            ValueError: 지원하지 않는 파일 형식인 경우
+        """
         ext = os.path.splitext(file_path)[1].lower()
         
         logger.info(f"문서 파싱 시작: {file_path} (크기: {os.path.getsize(file_path)} bytes)")
@@ -33,7 +47,20 @@ class DocumentParser:
             raise ValueError(f"지원하지 않는 파일 형식: {ext}")
     
     def parse_pdf(self, file_path: str, chunk_size: int) -> Generator[str, None, None]:
-        """PDF 파일 파싱"""
+        """
+        PDF 파일 파싱
+        PyMuPDF로 텍스트 추출을 시도하고, 실패 시 OCR을 수행합니다.
+        
+        Args:
+            file_path (str): PDF 파일 경로
+            chunk_size (int): 청크 크기
+            
+        Yields:
+            str: 파싱된 텍스트 청크
+            
+        Raises:
+            ValueError: PDF 파싱 중 오류가 발생한 경우
+        """
         try:
             logger.info(f"PDF 파싱 시작: {file_path}")
             doc = fitz.open(file_path)
@@ -89,7 +116,20 @@ class DocumentParser:
             raise ValueError(f"PDF 파일 파싱 중 오류 발생: {str(e)}")
     
     def parse_txt(self, file_path: str, chunk_size: int) -> Generator[str, None, None]:
-        """텍스트 파일 파싱"""
+        """
+        텍스트 파일 파싱
+        UTF-8과 CP949 인코딩을 모두 지원합니다.
+        
+        Args:
+            file_path (str): 텍스트 파일 경로
+            chunk_size (int): 청크 크기
+            
+        Yields:
+            str: 파싱된 텍스트 청크
+            
+        Raises:
+            ValueError: 텍스트 파일 파싱 중 오류가 발생한 경우
+        """
         try:
             logger.info(f"텍스트 파일 파싱 시작: {file_path}")
             with open(file_path, 'r', encoding='utf-8') as file:
@@ -119,7 +159,20 @@ class DocumentParser:
             raise ValueError(f"텍스트 파일 파싱 중 오류 발생: {str(e)}")
     
     def parse_docx(self, file_path: str, chunk_size: int) -> Generator[str, None, None]:
-        """DOCX 파일 파싱"""
+        """
+        DOCX 파일 파싱
+        단락 단위로 문서를 처리하고 청크로 분할합니다.
+        
+        Args:
+            file_path (str): DOCX 파일 경로
+            chunk_size (int): 청크 크기
+            
+        Yields:
+            str: 파싱된 텍스트 청크
+            
+        Raises:
+            ValueError: DOCX 파일 파싱 중 오류가 발생한 경우
+        """
         try:
             logger.info(f"DOCX 파일 파싱 시작: {file_path}")
             doc = Document(file_path)
@@ -170,7 +223,18 @@ class DocumentParser:
         chunk_size: int = 1000,
         overlap: int = 200
     ) -> Generator[str, None, None]:
-        """텍스트를 청크로 분할"""
+        """
+        텍스트를 청크로 분할
+        문장 경계를 고려하여 자연스럽게 분할합니다.
+        
+        Args:
+            text (str): 분할할 텍스트
+            chunk_size (int): 청크 크기
+            overlap (int): 청크 간 중복 크기
+            
+        Yields:
+            str: 분할된 텍스트 청크
+        """
         if not text.strip():
             logger.warning("청킹할 텍스트가 비어있습니다")
             return
@@ -197,7 +261,24 @@ class DocumentParser:
             
             if end >= text_len:
                 break
-                
+            
             start = end - overlap
-        
-        logger.debug(f"청킹 완료: {chunk_count}개 청크 생성") 
+
+"""
+이 파일의 주요 역할:
+1. 다양한 형식의 문서 파싱
+2. 텍스트 청킹
+3. OCR 처리
+
+주요 기능:
+- PDF 파일 파싱 (PyMuPDF + OCR)
+- 텍스트 파일 파싱 (UTF-8, CP949)
+- DOCX 파일 파싱
+- 텍스트 청킹
+
+사용된 주요 기술:
+- PyMuPDF
+- python-docx
+- pytesseract (OCR)
+- pdf2image
+""" 
