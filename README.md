@@ -20,14 +20,29 @@
 # Poetry 설치 (필요한 경우)
 curl -sSL https://install.python-poetry.org | python3 -
 
+# 프로젝트 클론
+git clone https://github.com/yourusername/lang_agent.git
+cd lang_agent
+
+# Poetry 환경 설정 (Python 3.11 사용)
+poetry env use python3.11
+
 # 프로젝트 의존성 설치
 poetry install
 ```
 
 3. 환경 변수 설정:
 
-    - `.env.example`을 `.env`로 복사하고 필요한 API 키를 설정합니다.
-    - 필요한 API 키: OpenAI, Tavily Search (또는 Google Custom Search), HuggingFace
+    - `.env.example`을 `.env`로 복사하고 필요한 API 키를 설정합니다:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+    - 필요한 API 키:
+        - OPENAI_API_KEY: OpenAI API 키
+        - TAVILY_API_KEY: Tavily Search API 키
+        - HUGGINGFACE_API_KEY: HuggingFace API 키
 
 4. (선택 사항) OCR 기능을 위해 Tesseract OCR을 설치합니다:
     - macOS: `brew install tesseract`
@@ -36,53 +51,22 @@ poetry install
 
 ## 실행 방법
 
-다음 두 가지 방법 중 하나로 애플리케이션을 실행할 수 있습니다:
-
-### 1. Streamlit 직접 실행
-
-#### macOS/Linux:
+Poetry 환경에서 다음과 같이 실행합니다:
 
 ```bash
-# 가상환경 활성화
-poetry shell
-
-# Streamlit 애플리케이션 실행
-streamlit run src/ai_agent/ui.py
+# 프로젝트 디렉토리에서
+poetry run streamlit run src/ai_agent/ui.py
 ```
 
-#### Windows:
-
-```
-# 가상환경 활성화 (명령 프롬프트)
-poetry shell
-
-# Streamlit 애플리케이션 실행
-streamlit run src/ai_agent/ui.py
-```
-
-### 2. 실행 스크립트 사용
-
-#### macOS/Linux:
+또는 Poetry 쉘을 활성화한 후 실행할 수도 있습니다:
 
 ```bash
-# 가상환경 활성화
+# Poetry 쉘 활성화
 poetry shell
 
-# 실행 스크립트로 애플리케이션 실행
-python run_app.py
+# Streamlit 앱 실행
+streamlit run src/ai_agent/ui.py
 ```
-
-#### Windows:
-
-```
-# 가상환경 활성화 (명령 프롬프트)
-poetry shell
-
-# 실행 스크립트로 애플리케이션 실행
-python run_app.py
-```
-
-실행 스크립트(`run_app.py`)는 경로 설정과 서버 포트 지정 등을 자동으로 처리하여 더 편리하게 애플리케이션을 시작할 수 있습니다.
 
 브라우저에서 http://localhost:8501 로 접속하여 애플리케이션을 사용할 수 있습니다.
 

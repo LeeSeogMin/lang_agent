@@ -21,6 +21,17 @@ logger = logging.getLogger(__name__)
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 TAVILY_API_URL = "https://api.tavily.com/v1/search"
 
+def create_error_result(error_msg: str) -> List[SearchResult]:
+    """오류 결과를 생성합니다."""
+    logger.error(error_msg)
+    return [SearchResult(
+        title="검색 오류",
+        link="",
+        snippet=error_msg,
+        source="error",
+        score=0.0
+    )]
+
 class TavilySearchAPI:
     def __init__(self, api_key: Optional[str] = None):
         """
@@ -35,10 +46,8 @@ class TavilySearchAPI:
         """
         self.api_key = api_key or TAVILY_API_KEY
         
-        logger.debug(f"API Key: {self.api_key}")
-        
         if not self.api_key:
-            raise ValueError("Tavily API 키가 필요합니다.")
+            raise ValueError("Tavily API 키가 필요합니다. TAVILY_API_KEY 환경 변수를 설정해주세요.")
     
     def search(
         self,
@@ -48,30 +57,17 @@ class TavilySearchAPI:
     ) -> List[SearchResult]:
         """
         Tavily 검색 API를 사용하여 검색을 수행합니다.
-        
-        Args:
-            query (str): 검색 쿼리
-            search_type (str): 검색 유형 ("regular" 또는 "scholar")
-            num_results (int): 반환할 결과 수
-            
-        Returns:
-            List[SearchResult]: 검색 결과 목록
-                각 결과는 제목, 링크, 스니펫, 소스, 점수를 포함
-                
-        Note:
-            - 학술 검색의 경우 고급 검색 깊이 사용
-            - API 오류 발생 시 빈 목록 반환
         """
-        logger.debug(f"검색 시작 - 쿼리: {query}, 타입: {search_type}")
+        logger.info(f"Tavily 검색 시작 - 쿼리: {query}, 타입: {search_type}")
         
         try:
             headers = {
                 "api-key": self.api_key,
                 "Content-Type": "application/json"
             }
-            logger.debug(f"요청 헤더: {headers}")
             
-            params = {
+            # API 요청 데이터
+            data = {
                 "query": query,
                 "search_depth": "advanced" if search_type == "scholar" else "basic",
                 "max_results": num_results,
@@ -79,60 +75,59 @@ class TavilySearchAPI:
                 "include_raw_content": False,
                 "include_images": False
             }
-            logger.debug(f"요청 파라미터: {json.dumps(params, indent=2)}")
             
+            logger.debug(f"API 요청 데이터: {json.dumps(data, indent=2, ensure_ascii=False)}")
+            
+            # API 요청 수행
             response = requests.post(
                 TAVILY_API_URL,
                 headers=headers,
-                json=params
+                json=data,
+                timeout=30
             )
             
-            logger.debug(f"응답 상태 코드: {response.status_code}")
-            logger.debug(f"응답 헤더: {dict(response.headers)}")
-            logger.debug(f"응답 내용: {response.text[:500]}...")  # 처음 500자만 로깅
+            logger.info(f"API 응답 상태 코드: {response.status_code}")
             
-            response.raise_for_status()
-            result = response.json()
+            # 인증 오류 처리
+            if response.status_code == 401:
+                return create_error_result("Tavily API 인증 오류: API 키가 유효하지 않거나 만료되었습니다.")
             
-            logger.debug(f"API 응답 받음: {result.keys()}")
-            
-            search_results = []
-            if "results" in result:
-                for item in result["results"]:
-                    search_results.append(
-                        SearchResult(
-                            title=item.get("title", ""),
-                            link=item.get("url", ""),
-                            snippet=item.get("description", ""),
-                            source=search_type,
-                            score=item.get("relevance_score", 1.0)
+            if response.status_code == 200:
+                result = response.json()
+                logger.debug(f"API 응답 데이터: {json.dumps(result, indent=2, ensure_ascii=False)}")
+                
+                search_results = []
+                if "results" in result:
+                    for item in result["results"]:
+                        search_results.append(
+                            SearchResult(
+                                title=item.get("title", ""),
+                                link=item.get("url", ""),
+                                snippet=item.get("content", ""),
+                                source="web",
+                                score=item.get("relevance_score", 0.0)
+                            )
                         )
-                    )
-                logger.debug(f"검색 결과 {len(search_results)}개 처리됨")
-            else:
-                logger.warning("검색 결과 없음")
+                    logger.info(f"검색 결과 {len(search_results)}개 처리됨")
+                    return search_results
+                else:
+                    logger.warning("검색 결과가 없습니다.")
+                    return []
             
-            return search_results
+            return create_error_result(f"API 오류 응답: {response.text}")
+                
+        except requests.exceptions.Timeout:
+            return create_error_result("Tavily API 요청 시간 초과")
             
         except Exception as e:
-            logger.error(f"Tavily 검색 중 오류 발생: {str(e)}", exc_info=True)
-            return []
+            return create_error_result(f"예상치 못한 오류 발생: {str(e)}")
     
     def web_search(
         self,
         query: str,
         num_results: int = 10
     ) -> List[SearchResult]:
-        """
-        일반 웹 검색을 수행합니다.
-        
-        Args:
-            query (str): 검색 쿼리
-            num_results (int): 반환할 결과 수
-            
-        Returns:
-            List[SearchResult]: 웹 검색 결과 목록
-        """
+        """일반 웹 검색을 수행합니다."""
         return self.search(query, "regular", num_results)
     
     def scholar_search(
@@ -140,16 +135,7 @@ class TavilySearchAPI:
         query: str,
         num_results: int = 10
     ) -> List[SearchResult]:
-        """
-        학술 검색을 수행합니다.
-        
-        Args:
-            query (str): 검색 쿼리
-            num_results (int): 반환할 결과 수
-            
-        Returns:
-            List[SearchResult]: 학술 검색 결과 목록
-        """
+        """학술 검색을 수행합니다."""
         return self.search(query, "scholar", num_results)
 
 """

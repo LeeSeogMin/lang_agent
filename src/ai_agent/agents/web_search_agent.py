@@ -7,6 +7,9 @@ from typing import Dict, List, Any, Optional
 from ..utils.tavily_search import TavilySearchAPI
 from ..core.cache import CacheManager
 from ..models.state import SearchResult
+import logging
+
+logger = logging.getLogger(__name__)
 
 class WebSearchAgent:
     def __init__(
@@ -65,20 +68,26 @@ class WebSearchAgent:
                     query,
                     num_results=num_results
                 )
+            
+            result = {
+                "query": query,
+                "search_type": search_type,
+                "results": search_results
+            }
+            
+            # 결과 캐싱
+            self.cache_manager.set(cache_key, result)
+            
+            return result
+            
         except Exception as e:
-            print(f"검색 중 오류 발생: {str(e)}")
-            search_results = []
-        
-        result = {
-            "query": query,
-            "search_type": search_type,
-            "results": search_results
-        }
-        
-        # 결과 캐싱
-        self.cache_manager.set(cache_key, result)
-        
-        return result
+            logger.error(f"검색 중 오류 발생: {str(e)}")
+            return {
+                "query": query,
+                "search_type": search_type,
+                "results": [],
+                "error": str(e)
+            }
     
     def web_search(
         self,

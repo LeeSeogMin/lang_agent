@@ -62,12 +62,12 @@ class ControllerAgent:
         # 쿼리 분석 결과
         analysis = {
             "query": query,
-            "requires_web_search": False,  # 웹 검색 비활성화 (API 키 오류 때문)
-            "requires_rag": True,  # 기본적으로 RAG 검색 수행
+            "requires_web_search": True,  # 웹 검색 활성화
+            "requires_rag": True,  # RAG 검색 수행
             "search_type": "combined",  # web, scholar, combined 중 하나
             "priority": {
-                "web": 0.0,  # 웹 검색 결과 가중치
-                "rag": 1.0   # RAG 결과 가중치
+                "web": 0.5,  # 웹 검색 결과 가중치
+                "rag": 0.5   # RAG 결과 가중치
             }
         }
         
@@ -75,8 +75,8 @@ class ControllerAgent:
         academic_keywords = ["논문", "연구", "학술", "이론", "실험"]
         if any(keyword in query for keyword in academic_keywords):
             analysis["search_type"] = "scholar"
-            analysis["priority"]["web"] = 0.4
-            analysis["priority"]["rag"] = 0.6
+            analysis["priority"]["web"] = 0.6  # 학술 검색의 경우 웹 검색 가중치 증가
+            analysis["priority"]["rag"] = 0.4
         
         # 결과 캐싱
         self.cache_manager.set(cache_key, analysis)
