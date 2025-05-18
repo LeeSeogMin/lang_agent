@@ -1,122 +1,153 @@
-# AI 검색 에이전트
+# LangGraph 기반 멀티에이전트 시스템 (Streamlit UI)
 
-이 프로젝트는 웹 검색과 문서 검색을 통합한 하이브리드 검색 시스템입니다. 다양한 포맷의 문서를 업로드하고 검색할 수 있으며, 웹 검색 결과와 함께 종합적인 정보를 제공합니다.
+## 주요 구성
+- **Streamlit UI**: 웹 기반 대화, 문서 업로드, 데이터 분석, 세션 관리
+- **Orchestrator**: 대화 흐름/에이전트 라우팅 관리
+- **Knowledge Agent**: 문서 RAG(파싱, 청킹, 임베딩, ChromaDB 저장)
+- **Data Analysis Agent**: 데이터 분석(파일/텍스트)
 
 ## 주요 기능
-
--   **하이브리드 검색**: 웹 검색과 로컬 문서 검색을 결합
--   **문서 관리**: PDF, DOCX, TXT 파일 지원 및 OCR 처리
--   **한국어 최적화**: 한국어 특화 임베딩 모델(SRoBERTa) 사용
--   **사용자 친화적 UI**: Streamlit 기반의 직관적인 인터페이스
--   **고성능 벡터 검색**: FAISS 기반의 빠른 임베딩 검색
--   **자동 요약**: 검색 결과의 AI 기반 자동 요약 기능
-
-## 설치 방법
-
-1. Python 3.11 이상이 필요합니다.
-2. Poetry를 사용하여 의존성을 설치합니다:
-
-```bash
-# Poetry 설치 (필요한 경우)
-curl -sSL https://install.python-poetry.org | python3 -
-
-# 프로젝트 클론
-git clone https://github.com/yourusername/lang_agent.git
-cd lang_agent
-
-# Poetry 환경 설정 (Python 3.11 사용)
-poetry env use python3.11
-
-# 프로젝트 의존성 설치
-poetry install
-```
-
-3. 환경 변수 설정:
-
-    - `.env.example`을 `.env`로 복사하고 필요한 API 키를 설정합니다:
-
-    ```bash
-    cp .env.example .env
-    ```
-
-    - 필요한 API 키:
-        - OPENAI_API_KEY: OpenAI API 키
-        - TAVILY_API_KEY: Tavily Search API 키
-        - HUGGINGFACE_API_KEY: HuggingFace API 키
-
-4. (선택 사항) OCR 기능을 위해 Tesseract OCR을 설치합니다:
-    - macOS: `brew install tesseract`
-    - Ubuntu: `sudo apt-get install tesseract-ocr`
-    - Windows: [Tesseract 설치 프로그램](https://github.com/UB-Mannheim/tesseract/wiki)
+- 문서 업로드 후 "문서 파싱/분석" 버튼으로 RAG 파이프라인 실행 (PDF, TXT, MD 지원)
+- 데이터 분석: 파일 업로드(.csv, .txt, .md) 또는 텍스트 입력 지원
+- 대화 세션 관리: Start New Chat로 새로운 세션 생성, 세션별 대화 기록
+- 모든 기능은 Streamlit 웹 UI에서 통합 제공
+- Claude 3.7 Sonnet 모델 기본 사용 (Anthropic API)
 
 ## 실행 방법
+1. 의존성 설치
+   ```bash
+   pip install -r requirements.txt
+   pip install streamlit
+   ```
+2. 환경 설정
+   ```bash
+   # .env 파일 생성
+   ANTHROPIC_API_KEY=your_anthropic_api_key
+   OPENAI_API_KEY=your_openai_api_key  # 임베딩용
+   ```
+3. 실행
+   ```bash
+   streamlit run src/backend/app.py
+   ```
+4. 브라우저에서 접속: [http://localhost:8501](http://localhost:8501)
 
-Poetry 환경에서 다음과 같이 실행합니다:
+## 사용법
+- **문서 업로드 & 분석**: 사이드바에서 파일 업로드 → "문서 파싱/분석" 클릭 → 청크/벡터화 결과 확인
+- **데이터 분석**: 파일 업로드 또는 텍스트 입력 → "Analyze Data" 클릭
+- **대화 세션**: "Start New Chat" 클릭 → 세션별 대화 진행
 
-```bash
-# 프로젝트 디렉토리에서
-poetry run streamlit run src/ai_agent/ui.py
-```
+---
 
-또는 Poetry 쉘을 활성화한 후 실행할 수도 있습니다:
+# LangGraph Multi-Agent System (Streamlit UI)
 
-```bash
-# Poetry 쉘 활성화
-poetry shell
+## Main Components
+- **Streamlit UI**: Web chat, document upload, data analysis, session management
+- **Orchestrator**: Conversation flow & agent routing
+- **Knowledge Agent**: Document RAG (parsing, chunking, embedding, ChromaDB)
+- **Data Analysis Agent**: Data analysis (file/text)
 
-# Streamlit 앱 실행
-streamlit run src/ai_agent/ui.py
-```
+## Features
+- Document upload & RAG pipeline (PDF, TXT, MD)
+- Data analysis: file upload (.csv, .txt, .md) or text input
+- Session management: Start New Chat, per-session history
+- All-in-one Streamlit web UI
+- Uses Claude 3.7 Sonnet model (Anthropic API)
 
-브라우저에서 http://localhost:8501 로 접속하여 애플리케이션을 사용할 수 있습니다.
+## How to Run
+1. Install dependencies
+   ```bash
+   pip install -r requirements.txt
+   pip install streamlit
+   ```
+2. Environment Setup
+   ```bash
+   # Create .env file
+   ANTHROPIC_API_KEY=your_anthropic_api_key
+   OPENAI_API_KEY=your_openai_api_key  # for embeddings
+   ```
+3. Run
+   ```bash
+   streamlit run src/backend/app.py
+   ```
+4. Open [http://localhost:8501](http://localhost:8501) in your browser
+
+## Usage
+- **Document Upload & Analysis**: Upload file → Click "문서 파싱/분석" → See chunk/vectorization result
+- **Data Analysis**: Upload file or enter text → Click "Analyze Data"
+- **Chat Sessions**: Click "Start New Chat" → Chat per session
+
+## 최근 추가된 기능
+
+### RAG 기반 데이터 필터링
+
+Neptune.ai 블로그 글에서 제안된 방법을 활용하여 구현된 이 기능은 자연어 쿼리를 사용하여 구조화된 데이터에서 관련 정보를 추출합니다.
+
+- **작동 방식**:
+  - 데이터를 청크로 분할하고 벡터 데이터베이스에 저장
+  - 사용자의 자연어 쿼리와 관련성이 높은 청크를 검색
+  - LLM을 사용하여 검색된 데이터 세그먼트에서 관련 정보 추출 및 요약
+  - CSV 데이터의 경우 pandas DataFrame 에이전트를 활용해 직접 쿼리 실행
+
+- **사용 예**:
+  - "30세 이상인 직원들만 보여주세요"
+  - "마케팅 부서의 평균 급여는 얼마인가요?"
+  - "급여가 가장 높은 상위 3명은 누구인가요?"
+
+### LLM 기반 코드 생성
+
+복잡한 데이터 분석을 위한 Python 코드를 자동으로 생성하는 기능으로, 사용자가 자연어로 설명한 작업을 수행하는 실행 가능한 코드를 제공합니다.
+
+- **지원하는 코드 유형**:
+  - **pandas**: 데이터 조작 및 분석을 위한 코드
+  - **numpy**: 수치 연산 및 고급 계산을 위한 코드
+  - **matplotlib/seaborn**: 데이터 시각화를 위한 코드
+
+- **사용 예**:
+  - "부서별 평균 급여를 계산하고 막대 그래프로 시각화해주세요"
+  - "연령대별 직원 수를 계산하고 원형 차트로 표시해주세요"
+  - "급여와 연령 간의 상관관계를 분석해주세요"
 
 ## 사용 방법
 
-1. **문서 업로드**:
+### 설치
 
-    - 사이드바의 '문서 업로드' 섹션에서 PDF, DOCX, TXT 파일을 업로드할 수 있습니다.
-    - 파일 크기는 최대 10MB로 제한됩니다.
-    - 업로드 시 자동으로 문서 처리 및 인덱싱이 진행됩니다.
+```bash
+# 저장소 클론
+git clone https://github.com/yourusername/multi_agent_system.git
+cd multi_agent_system
 
-2. **검색 수행**:
-
-    - 메인 화면에서 검색어를 입력하고 '검색' 버튼을 클릭합니다.
-    - 검색 결과는 관련성 점수와 함께 표시됩니다.
-    - AI 요약 기능으로 검색 결과의 핵심 내용을 확인할 수 있습니다.
-
-3. **문서 관리**:
-    - 사이드바에서 업로드된 문서 목록을 확인할 수 있습니다.
-    - 각 문서는 '삭제' 버튼을 통해 제거할 수 있습니다.
-
-## 시스템 구조
-
-```
-lang_agent/
-├── src/
-│   └── ai_agent/
-│       ├── __init__.py
-│       ├── agents/             # 에이전트 구현 (컨트롤러, 웹 검색, RAG)
-│       ├── config/             # 설정 파일
-│       ├── core/               # 핵심 기능 구현 (문서 처리, 벡터 저장소)
-│       ├── models/             # 데이터 모델 정의
-│       ├── utils/              # 유틸리티 함수
-│       └── ui.py               # Streamlit UI 구현
-├── documents/                  # 문서 저장 디렉토리
-├── cache/                      # 캐시 저장 디렉토리
-├── temp/                       # 임시 파일 디렉토리
-├── tests/                      # 테스트 코드
-├── .env                        # 환경 변수
-├── pyproject.toml              # 프로젝트 설정
-└── README.md                   # 프로젝트 설명서
+# 의존성 설치
+pip install -r requirements.txt
 ```
 
-## 최신 업데이트
+### 실행
 
--   **동시성 처리 개선**: 문서 업로드 및 처리 시 발생하는 경쟁 상태(race condition) 문제 해결
--   **폼 기반 업로드**: Streamlit 폼을 활용한 안정적인 파일 업로드 구현
--   **OCR 지원 추가**: 텍스트 추출이 어려운 PDF에 대한 OCR 처리 기능
--   **세션 상태 관리 개선**: 안정적인 UI 상태 관리로 사용자 경험 향상
+```bash
+# Streamlit 앱 실행
+python -m src.backend.app_streamlit
+```
 
-## 라이선스
+### 데이터 분석 기능 사용
 
-MIT License
+1. **파일 업로드**: CSV, JSON 또는 텍스트 파일을 업로드
+2. **고급 분석 옵션 설정**:
+   - RAG 기반 데이터 필터링 활성화 및 쿼리 입력
+   - 코드 생성 활성화 및 작업 설명 입력
+3. **분석 시작**: "지금 분석하기" 버튼 클릭
+
+## 테스트
+
+테스트 실행:
+
+```bash
+# 모든 테스트 실행
+python tests/run_tests.py
+
+# 특정 테스트만 실행
+python tests/run_tests.py --test data_analysis
+```
+
+## 라이센스
+
+MIT
+

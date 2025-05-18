@@ -34,11 +34,9 @@ ENV/
 *.swo
 
 # Project specific
-.pytest_cache/
-.coverage
-htmlcov/
-.mypy_cache/
-.cache/
-documents/
-cache/
+data/state_db/
 .DS_Store
+.langgraph_api/
+.cursorrules
+data/
+docs/

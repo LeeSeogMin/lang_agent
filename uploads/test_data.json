@@ -1,0 +1,29 @@
+{
+  "employees": [
+    {"name": "Alice", "age": 28, "job": "Engineer", "salary": 75000, "department": "Engineering"},
+    {"name": "Bob", "age": 35, "job": "Manager", "salary": 90000, "department": "Marketing"},
+    {"name": "Charlie", "age": 22, "job": "Designer", "salary": 65000, "department": "Design"},
+    {"name": "David", "age": 42, "job": "Director", "salary": 120000, "department": "Executive"},
+    {"name": "Eva", "age": 31, "job": "Developer", "salary": 80000, "department": "Engineering"},
+    {"name": "Frank", "age": 27, "job": "Analyst", "salary": 70000, "department": "Finance"},
+    {"name": "Grace", "age": 38, "job": "Manager", "salary": 92000, "department": "HR"},
+    {"name": "Henry", "age": 45, "job": "CTO", "salary": 150000, "department": "Executive"},
+    {"name": "Ivy", "age": 29, "job": "Engineer", "salary": 78000, "department": "Engineering"},
+    {"name": "Jack", "age": 24, "job": "Designer", "salary": 68000, "department": "Design"}
+  ],
+  "departments": [
+    {"name": "Engineering", "budget": 500000, "headcount": 3},
+    {"name": "Marketing", "budget": 300000, "headcount": 1},
+    {"name": "Design", "budget": 250000, "headcount": 2},
+    {"name": "Executive", "budget": 1000000, "headcount": 2},
+    {"name": "Finance", "budget": 400000, "headcount": 1},
+    {"name": "HR", "budget": 200000, "headcount": 1}
+  ],
+  "company_info": {
+    "name": "Tech Solutions Inc.",
+    "founded": 2010,
+    "location": "Seoul, South Korea",
+    "total_employees": 10,
+    "total_budget": 2650000
+  }
+} 
